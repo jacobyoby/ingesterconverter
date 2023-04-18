@@ -1,0 +1,3 @@
+pdfplumber==0.5.28
+textract==1.6.3
+python-docx==0.8.11
