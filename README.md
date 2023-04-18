@@ -39,3 +39,7 @@ python3 convert.py
 
 - Currently, the script only supports PDF and .docx files. You can modify the script to support other file formats.
 - The script uses multithreading to improve performance, but it may not be ideal for extremely large files or a very high number of files. Adjust the `max_workers` parameter in `ThreadPoolExecutor` according to your needs and system capabilities.
+- You can adjust the number of threads by modifying the max_workers parameter of the ThreadPoolExecutor. The current value is set to os.cpu_count(), which uses the number of CPU cores as the maximum number of worker threads.
+    - To change the number of threads, simply replace os.cpu_count() with the desired number. For example, if you want to use 8 threads, you would modify the line as follows:
+
+with ThreadPoolExecutor(max_workers=8) as executor:
