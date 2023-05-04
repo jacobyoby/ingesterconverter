@@ -1,3 +1,4 @@
+# Import required libraries
 import os
 import pdfplumber
 import textract
@@ -7,7 +8,7 @@ import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-# Set up logging
+# Configure logging settings
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Version: 1.0.3
@@ -16,7 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # v1.0.2 add sqlite
 # v1.0.3 add logging and multithreading
 
-# Extract text from PDF files
+# Function to extract text from PDF files
 def extract_pdf_text(file_path):
     pdf_text = ""
 
@@ -33,19 +34,13 @@ def extract_pdf_text(file_path):
 
     return pdf_text
 
-# Extract text from Word documents (.docx)
+# Function to extract text from Word documents (.docx)
 def extract_word_text(file_path):
     # Open the Word document with python-docx
     doc = docx.Document(file_path)
-    word_text = ""
+    return "".join(para.text + "\n" for para in doc.paragraphs)
 
-    # Iterate through the paragraphs in the Word document
-    for para in doc.paragraphs:
-        word_text += para.text + "\n"
-
-    return word_text
-
-# Set up the database for tracking processed files
+# Function to set up the database for tracking processed files
 def setup_database():
     # Connect to the SQLite database (it will be created if it doesn't exist)
     conn = sqlite3.connect("file_history.db")
@@ -63,20 +58,16 @@ def setup_database():
     conn.commit()
     return conn
 
-# Check if a file has already been processed
+# Function to check if a file has already been processed
 def file_processed(conn, file_path, last_modified):
     cursor = conn.cursor()
     # Query the database for the file_path and retrieve the last_modified timestamp
     cursor.execute(
         "SELECT last_modified FROM processed_files WHERE file_path = ?", (file_path,)
     )
-    result = cursor.fetchone()
-    # If the file is found in the database, compare the last_modified timestamps
-    if result:
-        return result[0] == last_modified
-    return False
+    return result[0] == last_modified if (result := cursor.fetchone()) else False
 
-# Add a processed file to the database
+# Function to add a processed file to the database
 def add_processed_file(conn, file_path, last_modified):
     cursor = conn.cursor()
     # Insert or replace the file entry in the 'processed_files' table
@@ -117,6 +108,7 @@ def main():
     input_folder = "input_folder"
     output_folder = "output_folder"
 
+    # Create input and output folders if they don't exist
     if not os.path.exists(input_folder):
         os.makedirs(input_folder)
 
@@ -125,12 +117,7 @@ def main():
 
     # Use a ThreadPoolExecutor to manage multithreading
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
-        futures = []
-
-        # Iterate through the files in the input_folder and create threads to process them
-        for file in os.listdir(input_folder):
-            futures.append(executor.submit(process_file, file, input_folder, output_folder))
-
+        futures = [executor.submit(process_file, file, input_folder, output_folder) for file in os.listdir(input_folder)]
         # Wait for all threads to complete
         for future in futures:
             future.result()
